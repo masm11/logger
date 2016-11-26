@@ -48,6 +48,7 @@ public class Log {
 	}
     }
     
+    private static final char[] levels = new char[] { '?', '?', 'V', 'D', 'I', 'W', 'E', 'A', };
     private static Thread thread;
     private static boolean debugging;
     private static final LinkedList<Item> queue = new LinkedList<>();
@@ -80,7 +81,7 @@ public class Log {
 		    
 		    if (writer != null) {
 			String time = formatter.format(item.stamp);
-			writer.println(time + " " + item.klass + ": " + msg);
+			writer.printf("%s %c/%s: %s\n", time, levels[item.priority], item.klass, msg);
 			writer.flush();
 		    }
 		    
