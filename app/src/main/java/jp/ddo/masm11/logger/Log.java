@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.LinkedList;
+import java.util.MissingFormatArgumentException;
 
 public class Log {
     private static class Item {
@@ -48,6 +49,8 @@ public class Log {
     }
     
     private static final LinkedList<Item> queue = new LinkedList<>();
+    private static PrintWriter writer = null;
+    private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
     
     private static class Logger implements Runnable {
 	public void run() {
@@ -113,49 +116,48 @@ public class Log {
     }
     
     public static void d(String fmt, Object... args) {
-	common(android.util.Log.DEBUG, null, fmt, args);
-    }
-    
-    public static void d(Throwable e, String fmt, Object... args) {
-	common(android.util.Log.DEBUG, e, fmt, args);
+	common(android.util.Log.DEBUG, fmt, args);
     }
     
     public static void i(String fmt, Object... args) {
-	common(android.util.Log.INFO, null, fmt, args);
-    }
-    
-    public static void i(Throwable e, String fmt, Object... args) {
-	common(android.util.Log.INFO, e, fmt, args);
+	common(android.util.Log.INFO, fmt, args);
     }
     
     public static void w(String fmt, Object... args) {
-	common(android.util.Log.WARN, null, fmt, args);
-    }
-    
-    public static void w(Throwable e, String fmt, Object... args) {
-	common(android.util.Log.WARN, e, fmt, args);
+	common(android.util.Log.WARN, fmt, args);
     }
     
     public static void e(String fmt, Object... args) {
-	common(android.util.Log.ERROR, null, fmt, args);
+	common(android.util.Log.ERROR, fmt, args);
     }
     
-    public static void e(Throwable e, String fmt, Object... args) {
-	common(android.util.Log.ERROR, e, fmt, args);
-    }
-    
-    private static void common(int priority, Throwable e, String fmt, Object... args) {
+    private static void common(int priority, String fmt, Object... args) {
 	String[] stkinf = getStackInfo();
-	String msg = String.format(fmt, args);
+	String msg;
+	Throwable e = null;
+	if (args.length >= 1 && args[args.length - 1] != null && args[args.length - 1] instanceof Throwable) {
+	    /* 最後の引数が Throwable の場合、
+	     * それを除いて format してみる。
+	     * 問題なければそのまま使い、最後の Throwable は stacktrace も出力する。
+	     * 引数が足りなければ、最後の Throwable も含めて format し、stacktrace はなし。
+	     */
+	    Object[] a = new Object[args.length - 1];
+	    System.arraycopy(args, 0, a, 0, args.length - 1);
+	    try {
+		msg = String.format(fmt, a);
+		e = (Throwable) args[args.length - 1];
+	    } catch (MissingFormatArgumentException ee) {
+		msg = String.format(fmt, args);
+	    }
+	} else {
+	    msg = String.format(fmt, args);
+	}
 	Item item = new Item(priority, e, msg, stkinf[0], stkinf[1], new Date());
 	synchronized (queue) {
 	    queue.addLast(item);
 	    queue.notify();
 	}
     }
-    
-    private static PrintWriter writer = null;
-    private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
     
     private static String[] getStackInfo() {
 	StackTraceElement[] elems = Thread.currentThread().getStackTrace();
