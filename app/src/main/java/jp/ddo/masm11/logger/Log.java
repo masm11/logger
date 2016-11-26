@@ -16,8 +16,6 @@
 */
 package jp.ddo.masm11.logger;
 
-// import com.crashlytics.android.Crashlytics;
-
 import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -50,6 +48,8 @@ public class Log {
 	}
     }
     
+    private static Thread thread;
+    private static boolean debugging;
     private static final LinkedList<Item> queue = new LinkedList<>();
     private static PrintWriter writer = null;
     private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
@@ -102,10 +102,11 @@ public class Log {
 	}
     }
     
-    private static Thread thread;
-    public static void init(File dir) {
+    public static void init(File dir, boolean debugging) {
 	if (thread != null)
 	    return;
+	
+	Log.debugging = debugging;
 	
 	File logFile = new File(dir, "log.txt");
 	
@@ -134,6 +135,10 @@ public class Log {
 	}
     }
     
+    public static void v(String fmt, Object... args) {
+	common(android.util.Log.VERBOSE, fmt, args);
+    }
+    
     public static void d(String fmt, Object... args) {
 	common(android.util.Log.DEBUG, fmt, args);
     }
@@ -150,7 +155,14 @@ public class Log {
 	common(android.util.Log.ERROR, fmt, args);
     }
     
+    public static void wtf(String fmt, Object... args) {
+	common(android.util.Log.ASSERT, fmt, args);
+    }
+    
     private static void common(int priority, String fmt, Object... args) {
+	if (!debugging && priority <= DEBUG)
+	    return;
+	
 	String[] stkinf = getStackInfo();
 	String msg;
 	Throwable e = null;
