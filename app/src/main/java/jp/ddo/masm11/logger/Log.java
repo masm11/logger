@@ -28,6 +28,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.LinkedList;
 import java.util.MissingFormatArgumentException;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 public class Log {
     private static class Item {
@@ -51,6 +53,7 @@ public class Log {
     private static final LinkedList<Item> queue = new LinkedList<>();
     private static PrintWriter writer = null;
     private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
+    private static Method crashlyticsLogException = null;
     
     private static class Logger implements Runnable {
 	public void run() {
@@ -81,10 +84,17 @@ public class Log {
 			writer.flush();
 		    }
 		    
-/*
-		    if (item.priority >= android.util.Log.ERROR)
-			Crashlytics.logException(item.e);
-*/
+		    if (item.priority >= android.util.Log.ERROR) {
+			if (crashlyticsLogException != null) {
+			    try {
+				crashlyticsLogException.invoke(null, item.e);
+			    } catch (IllegalAccessException e) {
+				android.util.Log.w("Log", "illegalaccessexception", e);
+			    } catch (InvocationTargetException e) {
+				android.util.Log.w("Log", "invocationtargetexception", e);
+			    }
+			}
+		    }
 		}
 	    } catch (InterruptedException e) {
 		android.util.Log.d("Logger", "interrupted", e);
@@ -113,6 +123,15 @@ public class Log {
 	
 	thread = new Thread(new Logger());
 	thread.start();
+	
+	try {
+	    Class klass = Class.forName("com.crashlytics.android.Crashlytics");
+	    crashlyticsLogException = klass.getMethod("logException", Throwable.class);
+	} catch (ClassNotFoundException e) {
+	    // android.util.Log.w("Log", "classnotfoundexception", e);
+	} catch (NoSuchMethodException e) {
+	    android.util.Log.w("Log", "nosuchmethodexception", e);
+	}
     }
     
     public static void d(String fmt, Object... args) {
