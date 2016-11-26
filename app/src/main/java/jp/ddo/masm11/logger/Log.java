@@ -160,7 +160,7 @@ public class Log {
     }
     
     private static void common(int priority, String fmt, Object... args) {
-	if (!debugging && priority <= DEBUG)
+	if (!debugging && priority <= android.util.Log.DEBUG)
 	    return;
 	
 	String[] stkinf = getStackInfo();
