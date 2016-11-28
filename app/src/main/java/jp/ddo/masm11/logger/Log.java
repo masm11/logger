@@ -112,7 +112,7 @@ public class Log {
 	File logFile = new File(dir, "log.txt");
 	
 	try {
-	    if (logFile.exists()) {
+	    if (debugging && logFile.exists()) {
 		writer = new PrintWriter(new BufferedWriter(new FileWriter(logFile, true)));
 		writer.println("================");
 		writer.flush();
