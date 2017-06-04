@@ -136,54 +136,59 @@ public class Log {
 	}
     }
     
-    public static void v(String fmt, Object... args) {
-	common(android.util.Log.VERBOSE, fmt, args);
+    public static void v(String msg, Throwable e) {
+	common(android.util.Log.VERBOSE, msg, e);
     }
     
-    public static void d(String fmt, Object... args) {
-	common(android.util.Log.DEBUG, fmt, args);
+    public static void d(String msg, Throwable e) {
+	common(android.util.Log.DEBUG, msg, e);
     }
     
-    public static void i(String fmt, Object... args) {
-	common(android.util.Log.INFO, fmt, args);
+    public static void i(String msg, Throwable e) {
+	common(android.util.Log.INFO, msg, e);
     }
     
-    public static void w(String fmt, Object... args) {
-	common(android.util.Log.WARN, fmt, args);
+    public static void w(String msg, Throwable e) {
+	common(android.util.Log.WARN, msg, e);
     }
     
-    public static void e(String fmt, Object... args) {
-	common(android.util.Log.ERROR, fmt, args);
+    public static void e(String msg, Throwable e) {
+	common(android.util.Log.ERROR, msg, e);
     }
     
-    public static void wtf(String fmt, Object... args) {
-	common(android.util.Log.ASSERT, fmt, args);
+    public static void wtf(String msg, Throwable e) {
+	common(android.util.Log.ASSERT, msg, e);
     }
     
-    private static void common(int priority, String fmt, Object... args) {
+    public static void v(String msg) {
+	common(android.util.Log.VERBOSE, msg, null);
+    }
+    
+    public static void d(String msg) {
+	common(android.util.Log.DEBUG, msg, null);
+    }
+    
+    public static void i(String msg) {
+	common(android.util.Log.INFO, msg, null);
+    }
+    
+    public static void w(String msg) {
+	common(android.util.Log.WARN, msg, null);
+    }
+    
+    public static void e(String msg) {
+	common(android.util.Log.ERROR, msg, null);
+    }
+    
+    public static void wtf(String msg) {
+	common(android.util.Log.ASSERT, msg, null);
+    }
+    
+    private static void common(int priority, String msg, Throwable e) {
 	if (!debugging && priority <= android.util.Log.DEBUG)
 	    return;
 	
 	String[] stkinf = getStackInfo();
-	String msg;
-	Throwable e = null;
-	if (args.length >= 1 && args[args.length - 1] != null && args[args.length - 1] instanceof Throwable) {
-	    /* 最後の引数が Throwable の場合、
-	     * それを除いて format してみる。
-	     * 問題なければそのまま使い、最後の Throwable は stacktrace も出力する。
-	     * 引数が足りなければ、最後の Throwable も含めて format し、stacktrace はなし。
-	     */
-	    Object[] a = new Object[args.length - 1];
-	    System.arraycopy(args, 0, a, 0, args.length - 1);
-	    try {
-		msg = String.format(fmt, a);
-		e = (Throwable) args[args.length - 1];
-	    } catch (MissingFormatArgumentException ee) {
-		msg = String.format(fmt, args);
-	    }
-	} else {
-	    msg = String.format(fmt, args);
-	}
 	Item item = new Item(priority, e, msg, stkinf[0], stkinf[1], new Date());
 	synchronized (queue) {
 	    queue.addLast(item);
